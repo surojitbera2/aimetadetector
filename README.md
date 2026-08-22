@@ -185,6 +185,63 @@ curl -s -X POST "$WM/clean" -H 'Content-Type: application/json' \
 
 The service routes by filename extension then magic bytes, so text / image / container are auto-detected. Set `WATERMARKS_SERVER_API_KEY` to require `Authorization: Bearer <key>` on every request. Loopback-only bind by default (`--host` to override); intended for a trusted network.
 
+## Browser dashboard
+
+This repository also includes an optional browser dashboard in `frontend/` and
+an authenticated proxy in `backend/`. The dashboard provides Clean, Inspect,
+and Detect actions, batch upload, per-file reports, and individual cleaned-file
+downloads. Files are sent through memory and are not stored by the dashboard.
+
+For Docker Compose, configure these values in the root `.env` file:
+
+```env
+WATERMARKS_SERVICE_URL=http://wr-core:8765
+WATERMARKS_SERVER_API_KEY=<same-key-used-by-wr-core>
+ADMIN_USERNAME=<your-admin-name>
+ADMIN_PASSWORD=<strong-password>
+SESSION_SECRET=<long-random-secret>
+DASHBOARD_ORIGIN=https://app.example.com
+COOKIE_SECURE=1
+```
+
+Generate secrets with:
+
+```bash
+openssl rand -hex 32
+```
+
+Start the core service and dashboard:
+
+```bash
+docker compose up --build -d
+```
+
+The dashboard container listens on `127.0.0.1:8080`. Keep it private and put
+Nginx in front of it on a dedicated subdomain such as `app.example.com`:
+
+```nginx
+server {
+    listen 80;
+    server_name app.example.com;
+    client_max_body_size 350M;
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+    }
+}
+```
+
+Then issue HTTPS with `sudo certbot --nginx -d app.example.com`. Open
+`https://app.example.com/` in a browser and sign in with the configured admin
+credentials. The upstream cleaner API remains private at `wr-core:8765` and
+the browser never receives its API key.
+
 ### Watermark detection (`/detect` and `detect_before` / `detect_after`)
 
 Detection is a separate step from cleaning — the service never calls vendor

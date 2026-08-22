@@ -37,6 +37,39 @@ services:
     user: "10001:10001"
     restart: unless-stopped
 
+  wr-dashboard-api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      WATERMARKS_SERVICE_URL: ${WATERMARKS_SERVICE_URL}
+      WATERMARKS_SERVER_API_KEY: ${WATERMARKS_SERVER_API_KEY}
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      SESSION_SECRET: ${SESSION_SECRET}
+      DASHBOARD_ORIGIN: ${DASHBOARD_ORIGIN}
+      COOKIE_SECURE: ${COOKIE_SECURE}
+      ADMIN_CREDENTIALS_PATH: /data/admin.json
+    depends_on:
+      - wr-core
+    read_only: true
+    tmpfs:
+      - /tmp
+    volumes:
+      - dashboard-data:/data
+    init: true
+    restart: unless-stopped
+
+  wr-dashboard-ui:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "127.0.0.1:8080:80"
+    depends_on:
+      - wr-dashboard-api
+    restart: unless-stopped
+
   wr-markllm:
     profiles: [harness]
     build:
@@ -155,3 +188,4 @@ volumes:
   markdiffusion-cache:
   ctrlregen-cache:
   synthid-cache:
+  dashboard-data:
