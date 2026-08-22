@@ -27,6 +27,8 @@ services:
     environment:
       # Empty by default (no auth). Set to require `Authorization: Bearer <key>`.
       WATERMARKS_SERVER_API_KEY: ${WATERMARKS_SERVER_API_KEY:-}
+      # Enable the keyed-Gumbel text watermark detector (optional).
+      WATERMARKS_GUMBEL_KEY: ${WATERMARKS_GUMBEL_KEY:-}
       # Optional SynthID image scorer sidecar (heavy profile).
       WATERMARKS_SYNTHID_SCORER_URL: ${WATERMARKS_SYNTHID_SCORER_URL:-}
       WATERMARKS_SYNTHID_SCORER_API_KEY: ${WATERMARKS_SYNTHID_SCORER_API_KEY:-}
